@@ -1,0 +1,137 @@
+<body>
+    <a-scene
+        mindar-image="imageTargetSrc: ./cow13.mind;"
+        maxTrack: 0.5;
+        minDetectionRating: 0.2;
+        missTolerance: 0;
+        warmupTolerance: 0;
+        filterMinCF: 0.01;
+        filterBeta: 1000;
+    >
+        <a-assets>
+            <video id="myvideo" autoplay loop muted playsinline
+                src="./output.webm"
+                preload="auto"
+                crossorigin="anonymous"
+                playsinline
+                webkit-playsinline
+            ></video>
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity 
+            light="type: ambient; intensity: 0.5" 
+            mindar-image-target="targetindex: 0" 
+            id="video-target"
+            scale="0.5 0.5 0.5"
+        >
+            <a-video
+                src="#myvideo"
+                width="3"
+                height="1.5"
+                position="0 0 0"
+                rotation="0 0 0"
+            ></a-video>
+        </a-entity>
+    </a-scene>
+    
+    <!-- ناحیه اسکن سفارشی -->
+    <div class="scanning-overlay">
+        <div class="scanning-line"></div>
+    </div>
+    
+    <!-- تایمر شمارش معکوس -->
+    <div id="timer">4</div>
+    
+    <!-- دکمه شروع بازی -->
+    <button id="startButton">شروع نینجا</button>
+    
+    <!-- راهنمای استفاده -->
+    <div class="instructions">
+        گاو رو روبروی دوربین قرار بده تا نینجا شی
+    </div>
+
+    <script>
+        <!-- تشخیص موبایل و بارگیری فایل‌های اختصاصی -->
+
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    document.write('<link rel="stylesheet" href="/css/mobile.css">');
+  }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const video = document.querySelector("#myvideo");
+            const target = document.querySelector("#video-target");
+            const startButton = document.getElementById("startButton");
+            const timer = document.getElementById("timer");
+            
+            let timerInterval;
+            let secondsLeft = 5;
+            
+            // رویداد پیدا شدن هدف
+            target.addEventListener("targetFound", () => {
+                video.play();
+                
+                // نمایش تایمر
+                timer.style.display = "block";
+                secondsLeft = 4;
+                timer.textContent = secondsLeft;
+                
+                // شروع تایمر
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    secondsLeft--;
+                    timer.textContent = secondsLeft;
+                    
+                    // پس از 4 ثانیه نمایش دکمه
+                    if(secondsLeft <= 0) {
+                        clearInterval(timerInterval);
+                        timer.style.display = "none";
+                        startButton.style.display = "block";
+                    }
+                }, 1000);
+            });
+            
+            // رویداد گم شدن هدف
+            target.addEventListener("targetLost", () => {
+                video.pause();
+                clearInterval(timerInterval);
+                timer.style.display = "none";
+                startButton.style.display = "none";
+            });
+            
+            // کلیک روی دکمه شروع بازی
+            startButton.addEventListener("click", () => {
+                // انتقال به صفحه بعدی
+                window.location.href = "game.html";
+            });
+            
+            // برای گرفتن اجازه استفاده از دوربین در iOS و Android
+            if (
+                typeof DeviceOrientationEvent !== "undefined" &&
+                typeof DeviceOrientationEvent.requestPermission === "function"
+            ) {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            console.log("دسترسی به سنسور داده شد");
+                        }
+                    })
+                    .catch(() => {
+                        alert("لطفاً دسترسی به سنسور دستگاه را در مرورگر فعال کنید.");
+                    });
+            }
+            
+            // اطمینان از گرفتن اجازه دوربین
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices
+                    .getUserMedia({ video: true })
+                    .catch((err) => {
+                        alert("اجازه دسترسی به دوربین داده نشد. لطفاً اجازه بدهید.");
+                        console.error(err);
+                    });
+            }
+        });
+    </script>
+</body>
+</html>
